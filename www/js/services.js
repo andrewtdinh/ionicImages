@@ -1,19 +1,80 @@
-// Ionic Starter App
+angular.module('starter')
 
-// angular.module is a global place for creating, registering and retrieving Angular modules
-// 'starter' is the name of this angular module example (also set in a <body> attribute in index.html)
-// the 2nd parameter is an array of 'requires'
-angular.module('starter', ['ionic', 'ngCordova'])
+.factory('FileService', function() {
+  var images;
+  var IMAGE_STORAGE_KEY = 'images';
 
-.run(function($ionicPlatform) {
-  $ionicPlatform.ready(function() {
-    // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
-    // for form inputs)
-    if(window.cordova && window.cordova.plugins.Keyboard) {
-      cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
+  function getImages() {
+    var img = window.localStorage.getItem(IMAGE_STORAGE_KEY);
+    if (img) {
+      images = JSON.parse(img);
+    } else {
+      images = [];
     }
-    if(window.StatusBar) {
-      StatusBar.styleDefault();
-    }
-  });
+    return images;
+  };
+
+  function addImage(img) {
+    images.push(img);
+    window.localStorage.setItem(IMAGE_STORAGE_KEY, JSON.stringify(images));
+  };
+
+  return {
+    storeImage: addImage,
+    images: getImages
+  }
 })
+.factory('ImageService', function($cordovaCamera, FileService, $q, $cordovaFile) {
+
+  function makeid() {
+    var text = '';
+    var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+    for (var i = 0; i < 5; i++) {
+      text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+  };
+
+  function optionsForType(type) {
+    var source;
+    switch (type) {
+      case 0:
+        source = Camera.PictureSourceType.CAMERA;
+        break;
+      case 1:
+        source = Camera.PictureSourceType.PHOTOLIBRARY;
+        break;
+    }
+    return {
+      destinationType: Camera.DestinationType.FILE_URI,
+      sourceType: source,
+      allowEdit: false,
+      encodingType: Camera.EncodingType.JPEG,
+      popoverOptions: CameraPopoverOptions,
+      saveToPhotoAlbum: false
+    };
+  }
+
+  function saveMedia(type) {
+    return $q(function(resolve, reject) {
+      var options = optionsForType(type);
+
+      $cordovaCamera.getPicture(options).then(function(imageUrl) {
+        var name = imageUrl.substr(imageUrl.lastIndexOf('/') + 1);
+        var namePath = imageUrl.substr(0, imageUrl.lastIndexOf('/') + 1);
+        var newName = makeid() + name;
+        $cordovaFile.copyFile(namePath, name, cordova.file.dataDirectory, newName)
+          .then(function(info) {
+            FileService.storeImage(newName);
+            resolve();
+          }, function(e) {
+            reject();
+          });
+      });
+    })
+  }
+  return {
+    handleMediaDialog: saveMedia
+  }
+});
