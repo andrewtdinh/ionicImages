@@ -26,13 +26,17 @@
     <script src="js/services.js"></script>
   </head>
   <body ng-app="starter">
-
-    <ion-pane>
-      <ion-header-bar class="bar-stable">
-        <h1 class="title">Ionic Blank Starter</h1>
-      </ion-header-bar>
-      <ion-content>
-      </ion-content>
-    </ion-pane>
+    <ion-content class="has-header padding" ng-controller="ImageController">
+      <button class="button button-full button-energized" ng-click="addMedia()">
+        Add image
+      </button>
+      <button class="button button-full button-positive" ng-click="sendEmail()">
+        Send mail
+      </button>
+      <br><br>
+      <ion-scroll direction="x" style="height:200px; min-height: 200px; overflow: scroll; white-space: nowrap;">
+        <img ng-repeat="image in images" ng-src="{{urlForImage(image)}}" style="height:200px; padding: 5px 5px 5px 5px;"/>
+      </ion-scroll>
+    </ion-conten>
   </body>
 </html>
